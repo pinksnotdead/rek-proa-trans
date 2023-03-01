@@ -1,0 +1,48 @@
+version: "3.8"
+services:
+  www_public:
+    build:
+      context: './sites/www_public/'
+    ports:
+      - "3000:3000"
+    volumes:
+      - ${PWD}/sites/www_public:/usr/src/app
+      - /usr/src/app/node_modules
+  php:
+    user: '0:0'
+    build:
+      context: './docker/php/'
+#      args:
+#        - UID=${UID}
+#        - GID=${GID}
+    environment:
+      - 'COMPOSER_HOME=/tmp/composer'
+      - 'COMPOSER_ALLOW_SUPERUSER=1'
+    volumes:
+      - ${PROJECT_ROOT}/:/var/www/html/:rw
+  db:
+    image: mariadb:latest
+    working_dir: /application
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --innodb-file-per-table=1]
+    volumes:
+      - rekproatrans-database:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+  apache:
+    build:
+      context: './docker/apache/'
+      args:
+       APACHE_VERSION: ${APACHE_VERSION}
+    depends_on:
+      - php
+    ports:
+      - "80:80"
+    volumes:
+      - ${PROJECT_ROOT}/:/var/www/html/:rw
+volumes:
+    rekproatrans-database:
